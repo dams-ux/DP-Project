@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - ECORIDE</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .debug-section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .test-btn { background: #007bff; color: white; border: none; padding: 10px 15px; margin: 5px; cursor: pointer; border-radius: 3px; }
+        .test-btn:hover { background: #0056b3; }
+        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 3px; margin: 5px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 3px; margin: 5px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 3px; margin: 5px 0; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Page - Test de Connexion EcoRide</h1>
+    
+    <div class="debug-section">
+        <h3>📋 Comptes de test disponibles</h3>
+        <div class="info">
+            <strong>Conducteur 1:</strong><br>
+            Email: pauldupont@hotmail.fr<br>
+            Mot de passe: Mavoiture6+
+        </div>
+        <div class="info">
+            <strong>Conducteur 2:</strong><br>
+            Email: jeanrive@hotmail.fr<br>
+            Mot de passe: password123
+        </div>
+        <div class="info">
+            <strong>Voyageur 1:</strong><br>
+            Email: marie.durand@gmail.com<br>
+            Mot de passe: Marie2024!
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h3>🧪 Tests de base</h3>
+        <button class="test-btn" onclick="testScriptsLoaded()">Vérifier chargement des scripts</button>
+        <button class="test-btn" onclick="testDatabaseConnection()">Tester base de données</button>
+        <button class="test-btn" onclick="testAuthentication()">Test authentification</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>🔐 Test de connexion</h3>
+        <form id="debug-form">
+            <div>
+                <label>Email: </label>
+                <input type="email" id="debug-email" value="pauldupont@hotmail.fr" style="width: 250px; padding: 5px;">
+            </div><br>
+            <div>
+                <label>Mot de passe: </label>
+                <input type="password" id="debug-password" value="Mavoiture6+" style="width: 250px; padding: 5px;">
+            </div><br>
+            <button type="submit" class="test-btn">🚀 Tester la connexion</button>
+        </form>
+        <div id="login-results"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>📝 Console Log</h3>
+        <div id="console-log"></div>
+    </div>
+
+    <script src="../scripts/supabase-client.js"></script>
+    <script src="../scripts/database.js"></script>
+    <script src="../scripts/auth-new.js"></script>
+
+    <script>
+        const resultsDiv = document.getElementById('test-results');
+        const loginResultsDiv = document.getElementById('login-results');
+        const consoleDiv = document.getElementById('console-log');
+
+        // Capturer les logs console
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            consoleDiv.innerHTML += `<div style="color: #28a745;">[LOG] ${args.join(' ')}</div>`;
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            consoleDiv.innerHTML += `<div style="color: #dc3545;">[ERROR] ${args.join(' ')}</div>`;
+        };
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        function testScriptsLoaded() {
+            resultsDiv.innerHTML = '';
+            
+            if (typeof database !== 'undefined') {
+                addResult('✅ database.js chargé avec succès', 'success');
+            } else {
+                addResult('❌ database.js non chargé', 'error');
+            }
+            
+            if (typeof auth !== 'undefined') {
+                addResult('✅ auth-new.js chargé avec succès', 'success');
+            } else {
+                addResult('❌ auth-new.js non chargé', 'error');
+            }
+            
+            if (typeof _supabase !== 'undefined') {
+                addResult('✅ supabase-client.js chargé avec succès', 'success');
+            } else {
+                addResult('⚠️ supabase-client.js non trouvé (peut-être normal)', 'info');
+            }
+        }
+
+        function testDatabaseConnection() {
+            if (typeof database === 'undefined') {
+                addResult('❌ Database non disponible', 'error');
+                return;
+            }
+
+            try {
+                // Tester l'accès aux données
+                const conducteurs = database.conducteurs;
+                const voyageurs = database.voyageurs;
+                
+                addResult(`✅ Base de données active: ${conducteurs.length} conducteurs, ${voyageurs.length} voyageurs`, 'success');
+                
+                // Afficher les premiers comptes
+                addResult(`📊 Premier conducteur: ${conducteurs[0].email}`, 'info');
+                addResult(`📊 Premier voyageur: ${voyageurs[0].email}`, 'info');
+                
+            } catch (error) {
+                addResult(`❌ Erreur d'accès à la base de données: ${error.message}`, 'error');
+            }
+        }
+
+        function testAuthentication() {
+            if (typeof database === 'undefined') {
+                addResult('❌ Database non disponible pour test d\'auth', 'error');
+                return;
+            }
+
+            try {
+                // Test avec les vraies données
+                const result = database.authenticateUser('pauldupont@hotmail.fr', 'Mavoiture6+');
+                
+                if (result.success) {
+                    addResult(`✅ Test auth réussi: ${result.user.prenom} ${result.user.nom} (${result.user.role})`, 'success');
+                } else {
+                    addResult(`❌ Test auth échoué: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Erreur lors du test auth: ${error.message}`, 'error');
+            }
+        }
+
+        // Test de connexion via formulaire
+        document.getElementById('debug-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            loginResultsDiv.innerHTML = '';
+            
+            const email = document.getElementById('debug-email').value;
+            const password = document.getElementById('debug-password').value;
+            
+            const div = document.createElement('div');
+            div.className = 'info';
+            div.innerHTML = `🔄 Test de connexion pour: ${email}`;
+            loginResultsDiv.appendChild(div);
+            
+            try {
+                if (typeof auth === 'undefined') {
+                    throw new Error('Module auth non disponible');
+                }
+                
+                const result = await auth.login(email, password);
+                
+                const resultDiv = document.createElement('div');
+                if (result.success) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `✅ ${result.message}<br>Redirection: ${result.redirectUrl}`;
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `❌ ${result.message}`;
+                }
+                loginResultsDiv.appendChild(resultDiv);
+                
+                // Afficher les détails en JSON
+                const jsonDiv = document.createElement('pre');
+                jsonDiv.innerHTML = JSON.stringify(result, null, 2);
+                loginResultsDiv.appendChild(jsonDiv);
+                
+            } catch (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.innerHTML = `❌ Erreur: ${error.message}`;
+                loginResultsDiv.appendChild(errorDiv);
+            }
+        });
+
+        // Lancer les tests automatiquement
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                testScriptsLoaded();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

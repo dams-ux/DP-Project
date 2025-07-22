@@ -19,7 +19,7 @@ class AuthManager {
                 if (result.user.role === 'admin') {
                     redirectUrl = 'admin-dashboard.html';
                 } else if (result.user.role === 'conducteur') {
-                    redirectUrl = 'comptecon-new.html';
+                    redirectUrl = 'comptecon.html';
                 } else {
                     redirectUrl = 'comptevoyageur.html';
                 }
